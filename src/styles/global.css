@@ -1,0 +1,42 @@
+@import "tailwindcss";
+@import "@heroui/styles";
+@import "@fontsource-variable/inter";
+@import "./theme.css";
+
+:root {
+  --font-inter: "Inter Variable", system-ui, sans-serif;
+  color-scheme: light;
+  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--foreground);
+}
+body { margin: 0; min-width: 280px; }
+.splash {
+  position: relative;
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+.splash__logo { display: block; width: clamp(200px, 18.75vw, 360px); height: auto; }
+.splash__decoration {
+  position: absolute;
+  bottom: max(-74px, -5.7vw);
+  left: 50%;
+  width: min(80vw, 1024px);
+  height: auto;
+  transform: translateX(-50%);
+  opacity: 0.13;
+  pointer-events: none;
+  z-index: -1;
+}
+.dark .splash__logo, .dark .splash__decoration { filter: invert(1); }
+.theme-toggle {
+  position: absolute;
+  top: clamp(20px, 3.4vh, 40px);
+  right: clamp(20px, 1.67vw, 40px);
+  border-radius: 50%;
+}
+.theme-toggle__moon, .dark .theme-toggle__sun { display: block; }
+.theme-toggle__sun, .dark .theme-toggle__moon { display: none; }

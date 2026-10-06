@@ -1,5 +1,8 @@
 # build output
 dist/
+
+# Local source materials; only copy production assets into src/ or public/.
+/NO SUBIR A GIT/
 # generated types
 .astro/
 

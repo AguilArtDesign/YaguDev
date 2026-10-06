@@ -1,0 +1,172 @@
+<cursor-trail aria-hidden="true"></cursor-trail>
+
+<style>
+  cursor-trail {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    overflow: hidden;
+    pointer-events: none;
+    user-select: none;
+    color: var(--foreground);
+  }
+
+  cursor-trail :global(span) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    font: 7px/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+    will-change: opacity;
+  }
+
+  @media (prefers-reduced-motion: reduce), (hover: none), (pointer: coarse) {
+    cursor-trail { display: none; }
+  }
+</style>
+
+<script>
+  class CursorTrail extends HTMLElement {
+    private cleanup?: () => void;
+
+    connectedCallback() {
+      const preference = matchMedia('(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)');
+      const controller = new AbortController();
+      const { signal } = controller;
+      const lifetime = 1100;
+      const spacing = 7;
+      const cellWidth = 10;
+      const cellHeight = 13;
+      const radius = 32;
+      const limit = 600;
+      const opacity = 0.45;
+      let frame = 0;
+      let previous: { x: number; y: number; time: number } | undefined;
+      let speed = 0;
+      let travel = 0;
+      let fastMode = false;
+      const particles = new Map<string, { element: HTMLSpanElement; born: number; expires: number; duration: number; strength: number }>();
+
+      const clear = () => {
+        cancelAnimationFrame(frame);
+        frame = 0;
+        previous = undefined;
+        speed = 0;
+        travel = 0;
+        fastMode = false;
+        particles.clear();
+        this.replaceChildren();
+      };
+
+      const draw = (now: number) => {
+        for (const [key, particle] of particles) {
+          const age = (now - particle.born) / particle.duration;
+          if (now >= particle.expires) {
+            particle.element.remove();
+            particles.delete(key);
+            continue;
+          }
+          const remaining = (particle.expires - now) / (particle.expires - particle.born);
+          particle.element.style.opacity = String(opacity * particle.strength * remaining ** 0.55);
+          const phase = age + (1 - particle.strength) * 0.35;
+          particle.element.textContent = phase < 0.25 ? 'o' : phase < 0.6 ? '>' : '_';
+        }
+        frame = particles.size ? requestAnimationFrame(draw) : 0;
+      };
+
+      const emit = (x: number, y: number, brushRadius = radius, duration = lifetime) => {
+        const now = performance.now();
+        // Paint a small field of cells, creating several rows across the path.
+        // Reuse cells where the trail overlaps instead of stacking characters.
+        for (let column = Math.floor((x - brushRadius) / cellWidth); column <= Math.ceil((x + brushRadius) / cellWidth); column++) {
+          for (let row = Math.floor((y - brushRadius) / cellHeight); row <= Math.ceil((y + brushRadius) / cellHeight); row++) {
+            const px = column * cellWidth;
+            const py = row * cellHeight;
+            const distance = Math.hypot(px - x, py - y);
+            if (distance > brushRadius) continue;
+            const key = `${column}:${row}`;
+            const strength = 1 - 0.65 * (distance / brushRadius) ** 2;
+            // Outer rows disappear first; the center survives to form a tapered tail.
+            const expires = now + duration * (1 - 0.85 * distance / brushRadius);
+            const existing = particles.get(key);
+            if (existing) {
+              // A passing edge must not shorten a cell painted by the center.
+              if (expires > existing.expires) {
+                existing.born = now;
+                existing.expires = expires;
+                existing.duration = duration;
+                existing.strength = strength;
+              }
+              continue;
+            }
+            if (particles.size >= limit) {
+              const oldest = particles.entries().next().value;
+              if (oldest) {
+                oldest[1].element.remove();
+                particles.delete(oldest[0]);
+              }
+            }
+            const element = document.createElement('span');
+            element.textContent = strength > 0.7 ? 'o' : '>';
+            element.style.opacity = String(opacity * strength);
+            element.style.transform = `translate3d(${px}px, ${py}px, 0)`;
+            this.append(element);
+            particles.set(key, { element, born: now, expires, duration, strength });
+          }
+        }
+      };
+
+      const move = (event: PointerEvent) => {
+        if (!preference.matches || event.pointerType !== 'mouse') return;
+        const { clientX: x, clientY: y } = event;
+        const now = performance.now();
+        if (previous && now - previous.time > 150) {
+          previous = undefined;
+          speed = 0;
+          travel = 0;
+          fastMode = false;
+        }
+        if (!previous) {
+          previous = { x, y, time: now };
+          emit(x, y);
+        } else {
+          const dx = x - previous.x;
+          const dy = y - previous.y;
+          const distance = Math.hypot(dx, dy);
+          const elapsed = Math.max(now - previous.time, 1);
+          speed += (distance / elapsed - speed) * (1 - Math.exp(-elapsed / 35));
+          // Hysteresis avoids flickering between a continuous tail and detached traces.
+          const fast = speed > (fastMode ? 0.8 : 1.2);
+          if (fast !== fastMode) travel = 0;
+          fastMode = fast;
+          const stride = fast ? 58 : spacing;
+          // Distance-based sampling keeps the gaps independent of mouse polling rate.
+          let offset = stride - travel;
+          let samples = 0;
+          for (; offset <= distance && samples < 32; offset += stride, samples++) {
+            const fraction = offset / distance;
+            emit(previous.x + dx * fraction, previous.y + dy * fraction,
+              fast ? 14 : radius, fast ? 480 : lifetime);
+          }
+          travel = (travel + distance) % stride;
+          // The bright head stays near the cursor; smaller detached traces fade behind it.
+          if (fast && distance > 0) emit(x, y, 26, Math.max(45, 130 / speed));
+          previous = { x, y, time: now };
+        }
+        if (!frame && particles.size) frame = requestAnimationFrame(draw);
+      };
+
+      window.addEventListener('pointermove', move, { passive: true, signal });
+      window.addEventListener('blur', clear, { signal });
+      document.documentElement.addEventListener('pointerleave', clear, { signal });
+      document.addEventListener('visibilitychange', clear, { signal });
+      preference.addEventListener('change', clear, { signal });
+      this.cleanup = () => { controller.abort(); clear(); };
+    }
+
+    disconnectedCallback() {
+      this.cleanup?.();
+    }
+  }
+
+  if (!customElements.get('cursor-trail')) customElements.define('cursor-trail', CursorTrail);
+</script>

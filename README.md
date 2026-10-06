@@ -1,43 +1,30 @@
-# Astro Starter Kit: Minimal
+# Yagu
 
-```sh
-npm create astro@latest -- --template minimal
-```
+Sitio en Astro con React, HeroUI v3, Tailwind CSS v4 y Gravity Icons.
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Desarrollo
 
-## 🚀 Project Structure
+Requiere Node.js >= 22.12.0. Instalar con `npm install`.
 
-Inside of your Astro project, you'll see the following folders and files:
+- `npm run dev`: iniciar Astro en segundo plano.
+- `npm run astro -- dev status`: consultar el servidor.
+- `npm run astro -- dev logs`: consultar los registros.
+- `npm run astro -- dev stop`: detener el servidor.
+- `npm run check`: comprobar Astro y TypeScript.
+- `npm run build`: generar el sitio en `dist/`.
 
-```text
-/
-├── public/
-├── src/
-│   └── pages/
-│       └── index.astro
-└── package.json
-```
+## Estructura y convenciones
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+- `src/layouts/Layout.astro`: documento base, metadatos y tema inicial.
+- `src/pages/index.astro`: pantalla temporal basada en la referencia suministrada.
+- `src/components/`: componentes React con HeroUI; usar `client:load` cuando necesiten interacción.
+- `src/styles/theme.css`: variables originales de marca para los temas claro y oscuro.
+- `src/styles/global.css`: Tailwind, HeroUI, Inter local y estilos generales.
+- `public/brand/`: logos SVG utilizados por el sitio.
+- `public/favicon.svg`: favicon de Yagu.
 
-There's nothing special about `src/components/`, but that's where we like to put any Astro/React/Vue/Svelte/Preact components.
+Usar HeroUI para los controles de interfaz y `@gravity-ui/icons` para los iconos. HeroUI v3 no requiere un proveedor global. El tema oscuro es el predeterminado; el selector guarda la preferencia en el navegador.
 
-Any static assets, like images, can be placed in the `public/` directory.
+`NO SUBIR A GIT/` contiene los materiales originales y está excluida de Git. Copiar únicamente los recursos necesarios a `src/` o `public/`. La referencia PNG se conserva en esa carpeta; la pantalla se reproduce con SVG y un selector funcional para adaptarse a distintos tamaños.
 
-## 🧞 Commands
-
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+Guías: [Astro + React](https://docs.astro.build/en/guides/framework-components/), [HeroUI](https://heroui.com/en/docs/react/getting-started/quick-start), [Gravity Icons](https://gravity-ui.com/libraries/icons).

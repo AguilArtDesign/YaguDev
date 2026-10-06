@@ -1,0 +1,33 @@
+---
+import '../styles/global.css';
+import CursorTrail from '../components/CursorTrail.astro';
+interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = 'Yagu — Sitio en construcción',
+  description = 'Estamos construyendo el nuevo sitio de Yagu. Pronto estaremos aquí.',
+} = Astro.props;
+---
+<!doctype html>
+<html lang="es" class="dark" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="generator" content={Astro.generator} />
+    <title>{title}</title>
+    <script is:inline>
+      try {
+        const theme = localStorage.getItem('yagu-theme') === 'light' ? 'light' : 'dark';
+        document.documentElement.classList.toggle('dark', theme === 'dark');
+        document.documentElement.dataset.theme = theme;
+      } catch {
+        // Use the default dark theme if storage is unavailable.
+      }
+    </script>
+  </head>
+  <body><slot /><CursorTrail /></body>
+</html>
