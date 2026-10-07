@@ -32,7 +32,7 @@
       const preference = matchMedia('(prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine)');
       const controller = new AbortController();
       const { signal } = controller;
-      const lifetime = 1100;
+      const lifetime = 1600;
       const spacing = 7;
       const cellWidth = 10;
       const cellHeight = 13;
@@ -44,7 +44,7 @@
       let speed = 0;
       let travel = 0;
       let fastMode = false;
-      const particles = new Map<string, { element: HTMLSpanElement; born: number; expires: number; duration: number; strength: number }>();
+      const particles = new Map<string, { element: HTMLSpanElement; born: number; expires: number; duration: number; strength: number; symbol: string }>();
 
       const clear = () => {
         cancelAnimationFrame(frame);
@@ -68,7 +68,7 @@
           const remaining = (particle.expires - now) / (particle.expires - particle.born);
           particle.element.style.opacity = String(opacity * particle.strength * remaining ** 0.55);
           const phase = age + (1 - particle.strength) * 0.35;
-          particle.element.textContent = phase < 0.25 ? 'o' : phase < 0.6 ? '>' : '_';
+          particle.element.textContent = phase < 0.6 ? particle.symbol : '_';
         }
         frame = particles.size ? requestAnimationFrame(draw) : 0;
       };
@@ -106,11 +106,13 @@
               }
             }
             const element = document.createElement('span');
-            element.textContent = strength > 0.7 ? 'o' : '>';
+            // Choose once per cell to mix the head without flickering every frame.
+            const symbol = Math.random() < 0.5 ? 'o' : '>';
+            element.textContent = symbol;
             element.style.opacity = String(opacity * strength);
             element.style.transform = `translate3d(${px}px, ${py}px, 0)`;
             this.append(element);
-            particles.set(key, { element, born: now, expires, duration, strength });
+            particles.set(key, { element, born: now, expires, duration, strength, symbol });
           }
         }
       };
@@ -145,11 +147,11 @@
           for (; offset <= distance && samples < 32; offset += stride, samples++) {
             const fraction = offset / distance;
             emit(previous.x + dx * fraction, previous.y + dy * fraction,
-              fast ? 14 : radius, fast ? 480 : lifetime);
+              fast ? 14 : radius, fast ? 750 : lifetime);
           }
           travel = (travel + distance) % stride;
           // The bright head stays near the cursor; smaller detached traces fade behind it.
-          if (fast && distance > 0) emit(x, y, 26, Math.max(45, 130 / speed));
+          if (fast && distance > 0) emit(x, y, 26, Math.max(70, 190 / speed));
           previous = { x, y, time: now };
         }
         if (!frame && particles.size) frame = requestAnimationFrame(draw);
